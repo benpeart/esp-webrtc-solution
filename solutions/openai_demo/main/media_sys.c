@@ -21,6 +21,11 @@
 #include "esp_capture_sink.h"
 #include "esp_log.h"
 
+#define USE_BSP_AUDIO_CODEC
+#ifdef USE_BSP_AUDIO_CODEC
+#include "bsp/esp32_p4_wifi6_touch_lcd_xc.h"
+#endif
+
 #define RET_ON_NULL(ptr, v) do {                                \
     if (ptr == NULL) {                                          \
         ESP_LOGE(TAG, "Memory allocate fail on %d", __LINE__);  \
@@ -47,8 +52,17 @@ static int build_capture_system(void)
 {
     // For S3 when use ES7210 it use TDM mode second channel is reference data
     esp_capture_audio_aec_src_cfg_t codec_cfg = {
+#ifdef USE_BSP_AUDIO_CODEC
+        .record_handle = bsp_audio_codec_microphone_init(),
+#else        
         .record_handle = get_record_handle(),
-#if CONFIG_IDF_TARGET_ESP32S3
+#endif
+#if CONFIG_IDF_TARGET_ESP32P4
+        .mic_layout = "MMR",           // Mic, Mic, Reference layout for 3 channels
+        .channel = 3,                  // 3 channels: 2 mics, MIC3 is reference from 8311 loopback
+        .channel_mask = 1 | 2 | 4,     // Enable channels
+//        .data_on_vad = true,           // Enable data on VAD for better performance
+#elif CONFIG_IDF_TARGET_ESP32S3
         .channel = 4,
         .channel_mask = 1 | 2,
 #endif
@@ -68,7 +82,11 @@ static int build_capture_system(void)
 static int build_player_system()
 {
     i2s_render_cfg_t i2s_cfg = {
+#ifdef USE_BSP_AUDIO_CODEC
+        .play_handle = bsp_audio_codec_speaker_init(),
+#else   
         .play_handle = get_playback_handle(),
+#endif        
     };
     player_sys.audio_render = av_render_alloc_i2s_render(&i2s_cfg);
     if (player_sys.audio_render == NULL) {

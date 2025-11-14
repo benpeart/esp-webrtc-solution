@@ -17,7 +17,7 @@ extern "C" {
  * @brief  Set used board name, see `codec_board` README.md for more details
  */
 #if CONFIG_IDF_TARGET_ESP32P4
-#define TEST_BOARD_NAME "ESP32_P4_DEV_V14"
+#define TEST_BOARD_NAME "WAVESHARE_ESP32P4_ROUND_LCD"
 #else
 #define TEST_BOARD_NAME "S3_Korvo_V2"
 #endif
